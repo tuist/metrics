@@ -1,0 +1,64 @@
+# fly.toml app configuration file generated for tuist-metrics on 2025-08-22T14:23:11+02:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'tuist-metrics'
+primary_region = 'fra'
+
+[build]
+    image = 'grafana/grafana:latest'
+
+[env]
+    GF_DATABASE_TYPE = 'postgres'
+    GF_DATABASE_SSL_MODE = 'require'
+    GF_INSTALL_PLUGINS = 'grafana-clickhouse-datasource'
+    GF_SECURITY_ADMIN_USER = 'admin'
+    GF_SERVER_DOMAIN = 'metrics.tuist.dev'
+    GF_SERVER_HTTP_PORT = '8080'
+    GF_SERVER_ROOT_URL = 'https://metrics.tuist.dev'
+    GF_SMTP_ENABLED = 'true'
+    GF_SMTP_HOST = 'smtp.eu.mailgun.org:587'
+    GF_SMTP_USER = 'postmaster@mail.tuist.dev'
+    GF_SMTP_FROM_ADDRESS = 'metrics@tuist.dev'
+    GF_SMTP_FROM_NAME = 'Tuist Metrics'
+[[mounts]]
+    source = 'grafana_data'
+    destination = '/var/lib/grafana'
+
+[http_service]
+    internal_port = 8080
+    force_https = true
+    auto_stop_machines = 'stop'
+    auto_start_machines = true
+    min_machines_running = 0
+    processes = ['app']
+
+[[services]]
+    protocol = 'tcp'
+    internal_port = 8080
+    processes = ['app']
+
+    [[services.ports]]
+        port = 80
+        handlers = ['http']
+        force_https = true
+
+    [[services.ports]]
+        port = 443
+        handlers = ['tls', 'http']
+
+    [services.concurrency]
+        type = 'connections'
+        hard_limit = 25
+        soft_limit = 20
+
+    [[services.tcp_checks]]
+        interval = '15s'
+        timeout = '2s'
+        grace_period = '1s'
+
+[[vm]]
+    memory = '1gb'
+    cpu_kind = 'shared'
+    cpus = 1
